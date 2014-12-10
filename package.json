@@ -1,0 +1,27 @@
+{
+  "name": "splitty",
+  "version": "0.0.0",
+  "description": "Engine for multivariate split testing (a.k.a. a/b testing)",
+  "main": "index.js",
+  "scripts": {
+    "test": "nodeunit test"
+  },
+  "keywords": [
+    "ab",
+    "split",
+    "testing",
+    "engine"
+  ],
+  "devDependencies": {
+    "mockgoose": "^1.10.7",
+    "nodeunit": "*"
+  },
+  "author": "Steve Ridout",
+  "license": "MIT",
+  "dependencies": {
+    "async": "^0.9.0",
+    "crc32": "^0.2.2",
+    "mongoose": "^3.8.20",
+    "underscore": "^1.7.0"
+  }
+}
