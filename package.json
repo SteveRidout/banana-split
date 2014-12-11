@@ -2,9 +2,9 @@
   "name": "splitty",
   "version": "0.0.0",
   "description": "Engine for multivariate split testing (a.k.a. a/b testing)",
-  "main": "index.js",
+  "main": "lib/splitty.js",
   "scripts": {
-    "test": "nodeunit test"
+    "test": "jshint lib && jshint test && nodeunit test"
   },
   "keywords": [
     "ab",
@@ -13,6 +13,7 @@
     "engine"
   ],
   "devDependencies": {
+    "jshint": "*",
     "mockgoose": "^1.10.7",
     "nodeunit": "*"
   },

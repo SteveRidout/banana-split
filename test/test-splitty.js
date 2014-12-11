@@ -12,6 +12,21 @@ var Splitty = require('../lib/Splitty');
 var db,       // fake mockgoose database
 	splitty;  // splitty instance
 
+var roughlyEqual = function (a, b, relativeTolerance, absoluteTolerance) {
+	relativeTolerance = relativeTolerance || 0.1;    // 10% default
+	absoluteTolerance = absoluteTolerance || 0.0001; // default
+
+	if (a === b) {
+		return true;
+	} else if (Math.abs(a - b) <= absoluteTolerance) {
+		return true;
+	} else if (Math.abs(a - b) / Math.min(Math.abs(a), Math.abs(b)) <= relativeTolerance) {
+		return true;
+	} else {
+		return false;
+	}
+};
+
 // to catch errors that happen in an async function called from a test
 // see https://github.com/caolan/nodeunit/pull/245
 process.on('uncaughtException', function (err) {
@@ -26,7 +41,6 @@ exports.setUp = function (callback) {
 		db = mongoose.createConnection("test-splitty");
 		db.on('error', console.error.bind(console, 'connection error:'));
 		db.once('open', function () {
-			console.log('--- setting up ---');
 			splitty = Splitty({db: db});
 			callback();
 		});
@@ -34,11 +48,23 @@ exports.setUp = function (callback) {
 };
 
 exports.tearDown = function (callback) {
-//	db.close(function () {
-		mockgoose.reset();
-		console.log('--- teared down ---');
-		callback();
-//	});
+	mockgoose.reset();
+	callback();
+};
+
+exports.roughlyEqual = function (test) {
+	test.equal(roughlyEqual(1, 1.05), true);
+	test.equal(roughlyEqual(1, 1.09999), true);
+	test.equal(roughlyEqual(1, 1.11), false);
+	test.equal(roughlyEqual(1, 1.11, 0.2), true);
+	test.equal(roughlyEqual(20, 19), true);
+	test.equal(roughlyEqual(20, 20), true);
+	test.equal(roughlyEqual(-20, -21), true);
+	test.equal(roughlyEqual(-20, -23), false);
+
+	// not relatively close, but absolutely close
+	test.equal(roughlyEqual(0.00001, 0.00002), true);
+	test.done();
 };
 
 exports.createExperiment = function (test) {
@@ -129,7 +155,7 @@ exports.oneParticipant = function (test) {
 		function (callback) {
 			splitty.participate({
 				experiment: 'exp1',
-				participant: 'userID',
+				participant: 'user1',
 			}, function (err, variationName) {
 				test.ok(_.contains(['red', 'blue', 'green'], variationName));
 				callback(err, variationName);
@@ -142,7 +168,7 @@ exports.oneParticipant = function (test) {
 			async.each(_.range(20), function (index, callback) {
 				splitty.participate({
 					experiment: 'exp1',
-					participant: 'userID',
+					participant: 'user1',
 					alternatives: ['red', 'blue', 'green']
 				}, function (err, newVariation) {
 					// ...should all return the same variation
@@ -170,7 +196,7 @@ exports.oneParticipant = function (test) {
 		function (variationName, callback) {
 			splitty.convert({
 				experiment: 'exp1',
-				participant: 'userID'
+				participant: 'user1'
 			}, function (err) {
 				callback(err, variationName);
 			});
@@ -178,9 +204,9 @@ exports.oneParticipant = function (test) {
 		function (variationName, callback) {
 			splitty.experimentInfo('exp1', function (err, experiment) {
 				var variation = _.findWhere(experiment.variations, {name: variationName});
-				test.equal(variation.participants,    1);
-				test.equal(variation.conversions,     1);
-				test.equal(variation.conversionRate,  1);
+				test.equal(variation.participants,       1);
+				test.equal(variation.conversions,        1);
+				test.equal(variation.conversionRate,     1);
 				callback();
 			});
 		},
@@ -188,7 +214,7 @@ exports.oneParticipant = function (test) {
 		function (callback) {
 			splitty.optOut({
 				experiment: 'exp1',
-				participant: 'userID'
+				participant: 'user1'
 			}, function (err) {
 				callback(err);
 			});
@@ -209,5 +235,168 @@ exports.oneParticipant = function (test) {
 	});
 };
 
-console.log('end of test');
+exports.manyParticipants = function (test) {
+	// This test simulates many participants with different conversion rates
+	// and checks whether the results match
+	
+	// Note - conversion rates only works to granularity of 10%
+	var EXPERIMENTS = [
+		{
+			name: 'colors',
+			variations: [
+				{
+					name: 'red',
+					conversionRate: 0.7
+				},
+				{
+					name: 'blue',
+					conversionRate: 0.4
+				},
+				{
+					name: 'green',
+					conversionRate: 0.3
+				}
+			]
+		},
+		{
+			name: 'sizes',
+			variations: [
+				{
+					name: 'small',
+					conversionRate: 0.6
+				},
+				{
+					name: 'large',
+					conversionRate: 0.3
+				}
+			]
+		}
+	];
+	var TOTAL_PARTICIPANTS = 50;
+	async.eachSeries(EXPERIMENTS, function (experimentSpec, callback) {
+		async.waterfall([
+			// create experiments
+			function (callback) {
+				splitty.createExperiment({
+					name: experimentSpec.name,
+					variations: _.pluck(experimentSpec.variations, 'name')
+				}, function (err) {
+					callback(err);
+				});
+			},
+			// add lots of participants
+			function (callback) {
+				var participants = [];
+				var variationCounts = {};
+				
+				_.each(experimentSpec.variations, function (variation) {
+					variationCounts[variation.name] = 0;
+				});
+
+				async.each(_.range(TOTAL_PARTICIPANTS), function (index, callback) {
+					var userID = "user" + index;
+
+					splitty.participate({
+						experiment: experimentSpec.name,
+						participant: userID,
+					}, function (err, variationName) {
+						variationCounts[variationName]++;
+						participants.push({
+							participant: userID,
+							variation: variationName
+						});
+						callback(err, variationName);
+					});
+				}, function (err) {
+					callback(err, participants, variationCounts);
+				});
+			},
+			// check the variation counts, which should be a roughly equal split
+			function (participants, variationCounts, callback) {
+				splitty.experimentInfo(experimentSpec.name, function (err, experiment) {
+					_.each(experiment.variations, function (variation) {
+						test.ok(roughlyEqual(variation.participants, TOTAL_PARTICIPANTS / experiment.variations.length, 0.4, 0.1),
+							"roughly equal split: " + variation.name + ", " + variation.participants);
+					});
+					callback(err, participants, variationCounts);
+				});
+			},
+			// simulate the conversion rate
+			function (participants, variationCounts, callback) {
+				var converted = {};
+				_.each(experimentSpec.variations, function (variation) {
+					converted[variation.name] = 0;
+				});
+				async.each(_.range(participants.length), function (index, callback) {
+					var participant = participants[index];
+					var variationSpec = _.findWhere(experimentSpec.variations, {name: participant.variation});
+
+					// convert based on experimentSpec rates
+					if (converted[variationSpec.name] < variationSpec.conversionRate * variationCounts[variationSpec.name]) {
+						splitty.convert({
+							experiment: experimentSpec.name,
+							participant: participant.participant
+						}, function (err) {
+							converted[variationSpec.name]++;
+							callback(err);
+						});
+					} else {
+						callback();
+					}
+				}, function (err) {
+					callback(err, participants);
+				});
+			},
+			// check the conversion rates are correct (allowing for rounding error)
+			function (participants, callback) {
+				splitty.experimentInfo(experimentSpec.name, function (err, experiment) {
+					// check total participants number
+					var totalParticipants = _.reduce(_.pluck(experiment.variations, 'participants'), function (a, m) {return a + m;}, 0);
+					test.equal(totalParticipants, TOTAL_PARTICIPANTS);
+
+					_.each(experimentSpec.variations, function (variationSpec) {
+						var variation = _.findWhere(experiment.variations, {name: variationSpec.name});
+
+						test.equal(variation.name, variationSpec.name);
+						test.ok(roughlyEqual(variation.conversionRate, variationSpec.conversionRate),
+							experimentSpec.name + ", " + variationSpec.name + ": " +
+							variation.conversionRate + " (actual), " + variationSpec.conversionRate + " (expected)");
+						
+						// just check a valid confidence interval exists
+						test.ok(variation.confidenceInterval > 0);
+						test.ok(variation.confidenceInterval < 1);
+					});
+					callback(err, participants);
+				});
+			},
+			// opt out 50% of participants
+			function (participants, callback) {
+				async.each(participants.slice(0, participants.length / 2), function (participant, callback) {
+					splitty.optOut({
+						experiment: experimentSpec.name,
+						participant: participant.participant
+					}, function (err) {
+						callback(err);
+					});
+				}, function (err) {
+					callback(err);
+				});
+			},
+			// check total has decreased to 50%
+			function (callback) {
+				splitty.experimentInfo(experimentSpec.name, function (err, experiment) {
+					test.equal(
+						_.reduce(_.pluck(experiment.variations, 'participants'), function (a, m) {return a + m;}, 0),
+						TOTAL_PARTICIPANTS / 2);
+					callback();
+				});
+			}
+		], function (err) {
+			callback(err);
+		});
+	}, function (err) {
+		test.ok(!err, err);
+		test.done();
+	});
+};
 
