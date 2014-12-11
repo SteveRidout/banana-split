@@ -4,9 +4,9 @@
   "description": "Split testing for Node.js and MongoDB",
   "main": "lib/Banana.js",
   "repository": {
-    "type" : "git"
+    "type" : "git",
     "url" : "https://github.com/SteveRidout/banana"
-  }
+  },
   "scripts": {
     "test": "jshint lib && jshint test && nodeunit test"
   },
