@@ -1,8 +1,12 @@
 {
-  "name": "splitty",
+  "name": "banana",
   "version": "0.0.0",
-  "description": "Engine for multivariate split testing (a.k.a. a/b testing)",
-  "main": "lib/splitty.js",
+  "description": "Split testing for Node.js and MongoDB",
+  "main": "lib/Banana.js",
+  "repository": {
+    "type" : "git"
+    "url" : "https://github.com/SteveRidout/banana"
+  }
   "scripts": {
     "test": "jshint lib && jshint test && nodeunit test"
   },

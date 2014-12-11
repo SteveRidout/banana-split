@@ -7,7 +7,7 @@ var mongoose = require('mongoose'),
 	mockgoose = require('mockgoose');
 mockgoose(mongoose);
 
-var Splitty = require('../lib/Splitty');
+var Banana = require('../lib/Banana');
 
 var db,       // fake mockgoose database
 	splitty;  // splitty instance
