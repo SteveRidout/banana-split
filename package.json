@@ -4,9 +4,10 @@
   "description": "Split testing for Node.js and MongoDB",
   "main": "lib/Banana.js",
   "repository": {
-    "type" : "git",
-    "url" : "https://github.com/SteveRidout/banana"
+    "type": "git",
+    "url": "https://github.com/SteveRidout/banana"
   },
+  "homepage": "https://github.com/SteveRidout/banana",
   "scripts": {
     "test": "jshint lib && jshint test && nodeunit test"
   },
@@ -21,12 +22,17 @@
     "mockgoose": "^1.10.7",
     "nodeunit": "*"
   },
-  "author": "Steve Ridout",
+  "author": {
+    "name": "Steve Ridout"
+  },
   "license": "MIT",
   "dependencies": {
     "async": "^0.9.0",
     "crc32": "^0.2.2",
     "mongoose": "^3.8.20",
     "underscore": "^1.7.0"
+  },
+  "bugs": {
+    "url": "https://github.com/SteveRidout/banana/issues"
   }
 }

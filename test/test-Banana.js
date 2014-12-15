@@ -10,7 +10,7 @@ mockgoose(mongoose);
 var Banana = require('../lib/Banana');
 
 var db,       // fake mockgoose database
-	banana;   // banana instance
+	splitty;  // splitty instance
 
 var roughlyEqual = function (a, b, relativeTolerance, absoluteTolerance) {
 	relativeTolerance = relativeTolerance || 0.1;    // 10% default
@@ -38,10 +38,10 @@ exports.setUp = function (callback) {
 	if (db) {
 		callback();
 	} else {
-		db = mongoose.createConnection("test-banana");
+		db = mongoose.createConnection("test-splitty");
 		db.on('error', console.error.bind(console, 'connection error:'));
 		db.once('open', function () {
-			banana = Banana({db: db});
+			splitty = Splitty({db: db});
 			callback();
 		});
 	}
@@ -71,14 +71,14 @@ exports.createExperiment = function (test) {
 	async.waterfall([
 		// check 0 experiements
 		function (callback) {
-			banana.listExperiments(function (err, experiments) {
+			splitty.listExperiments(function (err, experiments) {
 				test.equal(experiments.length, 0);
 				callback();
 			});
 		},
 		// create experiment
 		function (callback) {
-			banana.createExperiment({
+			splitty.createExperiment({
 				name: 'colors',
 				variations: ['red', 'blue', 'green']
 			}, function (err) {
@@ -88,7 +88,7 @@ exports.createExperiment = function (test) {
 		},
 		// check experiement
 		function (callback) {
-			banana.listExperiments(function (err, experiments) {
+			splitty.listExperiments(function (err, experiments) {
 				test.equal(experiments.length, 1);
 				test.equal(experiments[0].name, 'colors');
 				callback();
@@ -96,7 +96,7 @@ exports.createExperiment = function (test) {
 		},
 		// add identical experiment
 		function (callback) {
-			banana.createExperiment({
+			splitty.createExperiment({
 				name: 'colors',
 				variations: ['red', 'blue', 'green']
 			}, function (err) {
@@ -106,7 +106,7 @@ exports.createExperiment = function (test) {
 		},
 		// check still only 1 experiement
 		function (callback) {
-			banana.listExperiments(function (err, experiments) {
+			splitty.listExperiments(function (err, experiments) {
 				test.equal(experiments.length, 1);
 				test.equal(experiments[0].name, 'colors');
 				callback();
@@ -114,7 +114,7 @@ exports.createExperiment = function (test) {
 		},
 		// add new experiment
 		function (callback) {
-			banana.createExperiment({
+			splitty.createExperiment({
 				name: 'sizes',
 				variations: ['small', 'large', 'control', 'massive']
 			}, function (err) {
@@ -124,7 +124,7 @@ exports.createExperiment = function (test) {
 		},
 		// check 2 experiements
 		function (callback) {
-			banana.listExperiments(function (err, experiments) {
+			splitty.listExperiments(function (err, experiments) {
 				test.equal(experiments.length, 2);
 
 				var names = _.pluck(experiments, 'name');
@@ -143,7 +143,7 @@ exports.oneParticipant = function (test) {
 	async.waterfall([
 		// create experiment
 		function (callback) {
-			banana.createExperiment({
+			splitty.createExperiment({
 				name: 'exp1',
 				variations: ['red', 'blue', 'green']
 			}, function (err) {
@@ -153,7 +153,7 @@ exports.oneParticipant = function (test) {
 		},
 		// participate
 		function (callback) {
-			banana.participate({
+			splitty.participate({
 				experiment: 'exp1',
 				participant: 'user1',
 			}, function (err, variationName) {
@@ -166,7 +166,7 @@ exports.oneParticipant = function (test) {
 			console.log('2');
 			// subsequent participate calls by same participant...
 			async.each(_.range(20), function (index, callback) {
-				banana.participate({
+				splitty.participate({
 					experiment: 'exp1',
 					participant: 'user1',
 					alternatives: ['red', 'blue', 'green']
@@ -181,7 +181,7 @@ exports.oneParticipant = function (test) {
 		},
 		function (variationName, callback) {
 			console.log('3');
-			banana.experimentInfo('exp1', function (err, experiment) {
+			splitty.experimentInfo('exp1', function (err, experiment) {
 				test.equal(experiment.name, 'exp1');
 				test.equal(experiment.variations.length, 3);
 
@@ -194,7 +194,7 @@ exports.oneParticipant = function (test) {
 		},
 		// convert
 		function (variationName, callback) {
-			banana.convert({
+			splitty.convert({
 				experiment: 'exp1',
 				participant: 'user1'
 			}, function (err) {
@@ -202,7 +202,7 @@ exports.oneParticipant = function (test) {
 			});
 		},
 		function (variationName, callback) {
-			banana.experimentInfo('exp1', function (err, experiment) {
+			splitty.experimentInfo('exp1', function (err, experiment) {
 				var variation = _.findWhere(experiment.variations, {name: variationName});
 				test.equal(variation.participants,       1);
 				test.equal(variation.conversions,        1);
@@ -212,7 +212,7 @@ exports.oneParticipant = function (test) {
 		},
 		// opt out
 		function (callback) {
-			banana.optOut({
+			splitty.optOut({
 				experiment: 'exp1',
 				participant: 'user1'
 			}, function (err) {
@@ -220,7 +220,7 @@ exports.oneParticipant = function (test) {
 			});
 		},
 		function (callback) {
-			banana.experimentInfo('exp1', function (err, experiment) {
+			splitty.experimentInfo('exp1', function (err, experiment) {
 				_.each(experiment.variations, function (variation) {
 					test.equal(variation.participants,   0);
 					test.equal(variation.conversions,    0);
@@ -277,7 +277,7 @@ exports.manyParticipants = function (test) {
 		async.waterfall([
 			// create experiments
 			function (callback) {
-				banana.createExperiment({
+				splitty.createExperiment({
 					name: experimentSpec.name,
 					variations: _.pluck(experimentSpec.variations, 'name')
 				}, function (err) {
@@ -296,7 +296,7 @@ exports.manyParticipants = function (test) {
 				async.each(_.range(TOTAL_PARTICIPANTS), function (index, callback) {
 					var userID = "user" + index;
 
-					banana.participate({
+					splitty.participate({
 						experiment: experimentSpec.name,
 						participant: userID,
 					}, function (err, variationName) {
@@ -313,7 +313,7 @@ exports.manyParticipants = function (test) {
 			},
 			// check the variation counts, which should be a roughly equal split
 			function (participants, variationCounts, callback) {
-				banana.experimentInfo(experimentSpec.name, function (err, experiment) {
+				splitty.experimentInfo(experimentSpec.name, function (err, experiment) {
 					_.each(experiment.variations, function (variation) {
 						test.ok(roughlyEqual(variation.participants, TOTAL_PARTICIPANTS / experiment.variations.length, 0.4, 0.1),
 							"roughly equal split: " + variation.name + ", " + variation.participants);
@@ -333,7 +333,7 @@ exports.manyParticipants = function (test) {
 
 					// convert based on experimentSpec rates
 					if (converted[variationSpec.name] < variationSpec.conversionRate * variationCounts[variationSpec.name]) {
-						banana.convert({
+						splitty.convert({
 							experiment: experimentSpec.name,
 							participant: participant.participant
 						}, function (err) {
@@ -349,7 +349,7 @@ exports.manyParticipants = function (test) {
 			},
 			// check the conversion rates are correct (allowing for rounding error)
 			function (participants, callback) {
-				banana.experimentInfo(experimentSpec.name, function (err, experiment) {
+				splitty.experimentInfo(experimentSpec.name, function (err, experiment) {
 					// check total participants number
 					var totalParticipants = _.reduce(_.pluck(experiment.variations, 'participants'), function (a, m) {return a + m;}, 0);
 					test.equal(totalParticipants, TOTAL_PARTICIPANTS);
@@ -372,7 +372,7 @@ exports.manyParticipants = function (test) {
 			// opt out 50% of participants
 			function (participants, callback) {
 				async.each(participants.slice(0, participants.length / 2), function (participant, callback) {
-					banana.optOut({
+					splitty.optOut({
 						experiment: experimentSpec.name,
 						participant: participant.participant
 					}, function (err) {
@@ -384,7 +384,7 @@ exports.manyParticipants = function (test) {
 			},
 			// check total has decreased to 50%
 			function (callback) {
-				banana.experimentInfo(experimentSpec.name, function (err, experiment) {
+				splitty.experimentInfo(experimentSpec.name, function (err, experiment) {
 					test.equal(
 						_.reduce(_.pluck(experiment.variations, 'participants'), function (a, m) {return a + m;}, 0),
 						TOTAL_PARTICIPANTS / 2);
