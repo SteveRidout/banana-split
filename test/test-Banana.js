@@ -82,7 +82,6 @@ exports.createExperiment = function (test) {
 				name: 'colors',
 				variations: ['red', 'blue', 'green']
 			}, function (err) {
-				test.ok(!err);
 				callback();
 			});
 		},
@@ -118,7 +117,6 @@ exports.createExperiment = function (test) {
 				name: 'sizes',
 				variations: ['small', 'large', 'control', 'massive']
 			}, function (err) {
-				test.ok(!err);
 				callback();
 			});
 		},
@@ -147,8 +145,7 @@ exports.oneParticipant = function (test) {
 				name: 'exp1',
 				variations: ['red', 'blue', 'green']
 			}, function (err) {
-				test.ok(!err);
-				callback();
+				callback(err);
 			});
 		},
 		// participate
@@ -163,7 +160,6 @@ exports.oneParticipant = function (test) {
 		},
 		// re-participate multiple times
 		function (variationName, callback) {
-			console.log('2');
 			// subsequent participate calls by same participant...
 			async.each(_.range(20), function (index, callback) {
 				banana.participate({
@@ -180,7 +176,6 @@ exports.oneParticipant = function (test) {
 			});
 		},
 		function (variationName, callback) {
-			console.log('3');
 			banana.experimentInfo('exp1', function (err, experiment) {
 				test.equal(experiment.name, 'exp1');
 				test.equal(experiment.variations.length, 3);
@@ -253,13 +248,27 @@ exports.optOutIfNotConverted = function (test) {
 				experiment: 'colors',
 				participant: 'user1',
 			}, function (err, variationName) {
+				test.ok(!err, err);
 				test.ok(_.contains(['red', 'blue', 'green'], variationName));
 				callback(err);
+			});
+		},
+		// check there's one participant
+		function (callback) {
+			banana.experimentInfo('colors', function (err, experiment) {
+				test.ok(!err, err);
+				var totalParticipants = 0;
+				_.each(experiment.variations, function (variation) {
+					totalParticipants += variation.participants;
+				});
+				test.equal(totalParticipants, 1);
+				callback();
 			});
 		},
 		// opt out
 		function (callback) {
 			banana.optOut({
+				ifNotConverted: true,
 				experiment: 'colors',
 				participant: 'user1',
 			}, function (err) {
@@ -274,14 +283,14 @@ exports.optOutIfNotConverted = function (test) {
 					totalParticipants += variation.participants;
 				});
 				test.equal(totalParticipants, 0);
-				callback();
+				callback(err);
 			});
 		},
 		// participate again
 		function (callback) {
 			banana.participate({
 				experiment: 'colors',
-				participant: 'user1',
+				participant: 'user2',
 			}, function (err, variationName) {
 				test.ok(_.contains(['red', 'blue', 'green'], variationName));
 				callback(err);
@@ -291,7 +300,7 @@ exports.optOutIfNotConverted = function (test) {
 		function (callback) {
 			banana.convert({
 				experiment: 'colors',
-				participant: 'user1',
+				participant: 'user2',
 			}, function (err) {
 				callback(err);
 			});
@@ -301,7 +310,7 @@ exports.optOutIfNotConverted = function (test) {
 			banana.optOut({
 				ifNotConverted: true,
 				experiment: 'colors',
-				participant: 'user1',
+				participant: 'user2',
 			}, function (err) {
 				callback(err);
 			});
@@ -313,7 +322,7 @@ exports.optOutIfNotConverted = function (test) {
 				_.each(experiment.variations, function (variation) {
 					totalParticipants += variation.participants;
 				});
-				test.equal(totalParticipants, 1, "should be one participant");
+				test.equal(totalParticipants, 1);
 				callback();
 			});
 		},
@@ -321,7 +330,7 @@ exports.optOutIfNotConverted = function (test) {
 		function (callback) {
 			banana.optOut({
 				experiment: 'colors',
-				participant: 'user1',
+				participant: 'user2',
 			}, function (err) {
 				callback(err);
 			});
@@ -507,4 +516,3 @@ exports.manyParticipants = function (test) {
 		test.done();
 	});
 };
-
