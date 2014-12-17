@@ -235,6 +235,114 @@ exports.oneParticipant = function (test) {
 	});
 };
 
+exports.optOutIfNotConverted = function (test) {
+	async.waterfall([
+		// create experiment
+		function (callback) {
+			banana.createExperiment({
+				name: 'colors',
+				variations: ['red', 'blue', 'green']
+			}, function (err) {
+				test.ok(!err);
+				callback();
+			});
+		},
+		// participate
+		function (callback) {
+			banana.participate({
+				experiment: 'colors',
+				participant: 'user1',
+			}, function (err, variationName) {
+				test.ok(_.contains(['red', 'blue', 'green'], variationName));
+				callback(err);
+			});
+		},
+		// opt out
+		function (callback) {
+			banana.optOut({
+				experiment: 'colors',
+				participant: 'user1',
+			}, function (err) {
+				callback(err);
+			});
+		},
+		// check there's no participants
+		function (callback) {
+			banana.experimentInfo('colors', function (err, experiment) {
+				var totalParticipants = 0;
+				_.each(experiment.variations, function (variation) {
+					totalParticipants += variation.participants;
+				});
+				test.equal(totalParticipants, 0);
+				callback();
+			});
+		},
+		// participate again
+		function (callback) {
+			banana.participate({
+				experiment: 'colors',
+				participant: 'user1',
+			}, function (err, variationName) {
+				test.ok(_.contains(['red', 'blue', 'green'], variationName));
+				callback(err);
+			});
+		},
+		// convert
+		function (callback) {
+			banana.convert({
+				experiment: 'colors',
+				participant: 'user1',
+			}, function (err) {
+				callback(err);
+			});
+		},
+		// opt out if not converted
+		function (callback) {
+			banana.optOut({
+				ifNotConverted: true,
+				experiment: 'colors',
+				participant: 'user1',
+			}, function (err) {
+				callback(err);
+			});
+		},
+		// should be one participant
+		function (callback) {
+			banana.experimentInfo('colors', function (err, experiment) {
+				var totalParticipants = 0;
+				_.each(experiment.variations, function (variation) {
+					totalParticipants += variation.participants;
+				});
+				test.equal(totalParticipants, 1, "should be one participant");
+				callback();
+			});
+		},
+		// opt out regardless
+		function (callback) {
+			banana.optOut({
+				experiment: 'colors',
+				participant: 'user1',
+			}, function (err) {
+				callback(err);
+			});
+		},
+		// should be 0 participants
+		function (callback) {
+			banana.experimentInfo('colors', function (err, experiment) {
+				var totalParticipants = 0;
+				_.each(experiment.variations, function (variation) {
+					totalParticipants += variation.participants;
+				});
+				test.equal(totalParticipants, 0);
+				callback();
+			});
+		}
+	], function (err) {
+		if (err) throw err;
+		test.done();
+	});
+};
+
 exports.manyParticipants = function (test) {
 	// This test simulates many participants with different conversion rates
 	// and checks whether the results match
