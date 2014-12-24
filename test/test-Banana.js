@@ -515,4 +515,6 @@ exports.manyParticipants = function (test) {
 		test.ok(!err, err);
 		test.done();
 	});
+
+	// TODO: test with client-specified variation
 };
