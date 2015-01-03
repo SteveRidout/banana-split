@@ -41,7 +41,7 @@ exports.setUp = function (callback) {
 		db = mongoose.createConnection("test-banana");
 		db.on('error', console.error.bind(console, 'connection error:'));
 		db.once('open', function () {
-			banana = Banana({db: db, mongoose: mongoose});
+			banana = Banana({db: db, mongoose: mongoose, unitTest: true});
 			callback();
 		});
 	}
@@ -152,7 +152,7 @@ exports.oneParticipant = function (test) {
 		function (callback) {
 			banana.participate({
 				experiment: 'exp1',
-				participant: 'user1',
+				user: 'user1',
 			}, function (err, variationName) {
 				test.ok(_.contains(['red', 'blue', 'green'], variationName));
 				callback(err, variationName);
@@ -164,7 +164,7 @@ exports.oneParticipant = function (test) {
 			async.each(_.range(20), function (index, callback) {
 				banana.participate({
 					experiment: 'exp1',
-					participant: 'user1',
+					user: 'user1',
 					alternatives: ['red', 'blue', 'green']
 				}, function (err, newVariation) {
 					// ...should all return the same variation
@@ -176,11 +176,11 @@ exports.oneParticipant = function (test) {
 			});
 		},
 		function (variationName, callback) {
-			banana.experimentInfo('exp1', function (err, experiment) {
-				test.equal(experiment.name, 'exp1');
-				test.equal(experiment.variations.length, 3);
+			banana.getResult('exp1', 'event1', function (err, result) {
+				test.equal(result.experiment, 'exp1');
+				test.equal(result.variations.length, 3);
 
-				var variation = _.findWhere(experiment.variations, {name: variationName});
+				var variation = _.findWhere(result.variations, {name: variationName});
 				test.equal(variation.participants,    1);
 				test.equal(variation.conversions,     0);
 				test.equal(variation.conversionRate,  0);
@@ -189,16 +189,16 @@ exports.oneParticipant = function (test) {
 		},
 		// convert
 		function (variationName, callback) {
-			banana.convert({
-				experiment: 'exp1',
-				participant: 'user1'
+			banana.trackEvent({
+				event: 'event1',
+				user: 'user1'
 			}, function (err) {
 				callback(err, variationName);
 			});
 		},
 		function (variationName, callback) {
-			banana.experimentInfo('exp1', function (err, experiment) {
-				var variation = _.findWhere(experiment.variations, {name: variationName});
+			banana.getResult('exp1', 'event1', function (err, result) {
+				var variation = _.findWhere(result.variations, {name: variationName});
 				test.equal(variation.participants,       1);
 				test.equal(variation.conversions,        1);
 				test.equal(variation.conversionRate,     1);
@@ -209,13 +209,13 @@ exports.oneParticipant = function (test) {
 		function (callback) {
 			banana.optOut({
 				experiment: 'exp1',
-				participant: 'user1'
+				user: 'user1'
 			}, function (err) {
 				callback(err);
 			});
 		},
 		function (callback) {
-			banana.experimentInfo('exp1', function (err, experiment) {
+			banana.getResult('exp1', 'event1', function (err, experiment) {
 				_.each(experiment.variations, function (variation) {
 					test.equal(variation.participants,   0);
 					test.equal(variation.conversions,    0);
@@ -238,7 +238,7 @@ exports.optOutIfNotConverted = function (test) {
 				name: 'colors',
 				variations: ['red', 'blue', 'green']
 			}, function (err) {
-				test.ok(!err);
+				test.ok(!err, err);
 				callback();
 			});
 		},
@@ -246,7 +246,7 @@ exports.optOutIfNotConverted = function (test) {
 		function (callback) {
 			banana.participate({
 				experiment: 'colors',
-				participant: 'user1',
+				user: 'user1',
 			}, function (err, variationName) {
 				test.ok(!err, err);
 				test.ok(_.contains(['red', 'blue', 'green'], variationName));
@@ -255,7 +255,7 @@ exports.optOutIfNotConverted = function (test) {
 		},
 		// check there's one participant
 		function (callback) {
-			banana.experimentInfo('colors', function (err, experiment) {
+			banana.getResult('colors', 'event1', function (err, experiment) {
 				test.ok(!err, err);
 				var totalParticipants = 0;
 				_.each(experiment.variations, function (variation) {
@@ -268,18 +268,17 @@ exports.optOutIfNotConverted = function (test) {
 		// opt out
 		function (callback) {
 			banana.optOut({
-				ifNotConverted: true,
 				experiment: 'colors',
-				participant: 'user1',
+				user: 'user1',
 			}, function (err) {
 				callback(err);
 			});
 		},
 		// check there's no participants
 		function (callback) {
-			banana.experimentInfo('colors', function (err, experiment) {
+			banana.getResult('colors', 'event1', function (err, result) {
 				var totalParticipants = 0;
-				_.each(experiment.variations, function (variation) {
+				_.each(result.variations, function (variation) {
 					totalParticipants += variation.participants;
 				});
 				test.equal(totalParticipants, 0);
@@ -290,7 +289,7 @@ exports.optOutIfNotConverted = function (test) {
 		function (callback) {
 			banana.participate({
 				experiment: 'colors',
-				participant: 'user2',
+				user: 'user2',
 			}, function (err, variationName) {
 				test.ok(_.contains(['red', 'blue', 'green'], variationName));
 				callback(err);
@@ -298,46 +297,25 @@ exports.optOutIfNotConverted = function (test) {
 		},
 		// convert
 		function (callback) {
-			banana.convert({
-				experiment: 'colors',
-				participant: 'user2',
+			banana.trackEvent({
+				event: 'event1',
+				user: 'user2',
 			}, function (err) {
 				callback(err);
 			});
 		},
-		// opt out if not converted
-		function (callback) {
-			banana.optOut({
-				ifNotConverted: true,
-				experiment: 'colors',
-				participant: 'user2',
-			}, function (err) {
-				callback(err);
-			});
-		},
-		// should be one participant
-		function (callback) {
-			banana.experimentInfo('colors', function (err, experiment) {
-				var totalParticipants = 0;
-				_.each(experiment.variations, function (variation) {
-					totalParticipants += variation.participants;
-				});
-				test.equal(totalParticipants, 1);
-				callback();
-			});
-		},
-		// opt out regardless
+		// opt out
 		function (callback) {
 			banana.optOut({
 				experiment: 'colors',
-				participant: 'user2',
+				user: 'user2',
 			}, function (err) {
 				callback(err);
 			});
 		},
 		// should be 0 participants
 		function (callback) {
-			banana.experimentInfo('colors', function (err, experiment) {
+			banana.getResult('colors', 'event1', function (err, experiment) {
 				var totalParticipants = 0;
 				_.each(experiment.variations, function (variation) {
 					totalParticipants += variation.participants;
@@ -389,7 +367,7 @@ exports.manyParticipants = function (test) {
 			]
 		}
 	];
-	var TOTAL_PARTICIPANTS = 50;
+	var TOTAL_PARTICIPANTS = 100;
 	async.eachSeries(EXPERIMENTS, function (experimentSpec, callback) {
 		async.waterfall([
 			// create experiments
@@ -415,11 +393,11 @@ exports.manyParticipants = function (test) {
 
 					banana.participate({
 						experiment: experimentSpec.name,
-						participant: userID,
+						user: userID,
 					}, function (err, variationName) {
 						variationCounts[variationName]++;
 						participants.push({
-							participant: userID,
+							user: userID,
 							variation: variationName
 						});
 						callback(err, variationName);
@@ -430,9 +408,9 @@ exports.manyParticipants = function (test) {
 			},
 			// check the variation counts, which should be a roughly equal split
 			function (participants, variationCounts, callback) {
-				banana.experimentInfo(experimentSpec.name, function (err, experiment) {
-					_.each(experiment.variations, function (variation) {
-						test.ok(roughlyEqual(variation.participants, TOTAL_PARTICIPANTS / experiment.variations.length, 0.4, 0.1),
+				banana.getResult(experimentSpec.name, 'event-' + experimentSpec.name, function (err, result) {
+					_.each(result.variations, function (variation) {
+						test.ok(roughlyEqual(variation.participants, TOTAL_PARTICIPANTS / result.variations.length, 0.4, 0.1),
 							"roughly equal split: " + variation.name + ", " + variation.participants);
 					});
 					callback(err, participants, variationCounts);
@@ -444,15 +422,15 @@ exports.manyParticipants = function (test) {
 				_.each(experimentSpec.variations, function (variation) {
 					converted[variation.name] = 0;
 				});
-				async.each(_.range(participants.length), function (index, callback) {
+				async.eachSeries(_.range(participants.length), function (index, callback) {
 					var participant = participants[index];
 					var variationSpec = _.findWhere(experimentSpec.variations, {name: participant.variation});
 
 					// convert based on experimentSpec rates
 					if (converted[variationSpec.name] < variationSpec.conversionRate * variationCounts[variationSpec.name]) {
-						banana.convert({
-							experiment: experimentSpec.name,
-							participant: participant.participant
+						banana.trackEvent({
+							event: 'event-' + experimentSpec.name,
+							user: participant.user
 						}, function (err) {
 							converted[variationSpec.name]++;
 							callback(err);
@@ -466,13 +444,13 @@ exports.manyParticipants = function (test) {
 			},
 			// check the conversion rates are correct (allowing for rounding error)
 			function (participants, callback) {
-				banana.experimentInfo(experimentSpec.name, function (err, experiment) {
+				banana.getResult(experimentSpec.name, 'event-' + experimentSpec.name, function (err, result) {
 					// check total participants number
-					var totalParticipants = _.reduce(_.pluck(experiment.variations, 'participants'), function (a, m) {return a + m;}, 0);
+					var totalParticipants = _.reduce(_.pluck(result.variations, 'participants'), function (a, m) {return a + m;}, 0);
 					test.equal(totalParticipants, TOTAL_PARTICIPANTS);
 
 					_.each(experimentSpec.variations, function (variationSpec) {
-						var variation = _.findWhere(experiment.variations, {name: variationSpec.name});
+						var variation = _.findWhere(result.variations, {name: variationSpec.name});
 
 						test.equal(variation.name, variationSpec.name);
 						test.ok(roughlyEqual(variation.conversionRate, variationSpec.conversionRate, 0.2),
@@ -491,7 +469,7 @@ exports.manyParticipants = function (test) {
 				async.each(participants.slice(0, participants.length / 2), function (participant, callback) {
 					banana.optOut({
 						experiment: experimentSpec.name,
-						participant: participant.participant
+						user: participant.user
 					}, function (err) {
 						callback(err);
 					});
@@ -501,7 +479,7 @@ exports.manyParticipants = function (test) {
 			},
 			// check total has decreased to 50%
 			function (callback) {
-				banana.experimentInfo(experimentSpec.name, function (err, experiment) {
+				banana.getResult(experimentSpec.name, 'event-' + experimentSpec.name, function (err, experiment) {
 					test.equal(
 						_.reduce(_.pluck(experiment.variations, 'participants'), function (a, m) {return a + m;}, 0),
 						TOTAL_PARTICIPANTS / 2);
