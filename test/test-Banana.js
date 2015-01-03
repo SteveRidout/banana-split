@@ -208,7 +208,6 @@ exports.oneParticipant = function (test) {
 		// opt out
 		function (callback) {
 			banana.optOut({
-				experiment: 'exp1',
 				user: 'user1'
 			}, function (err) {
 				callback(err);
@@ -268,7 +267,6 @@ exports.optOutIfNotConverted = function (test) {
 		// opt out
 		function (callback) {
 			banana.optOut({
-				experiment: 'colors',
 				user: 'user1',
 			}, function (err) {
 				callback(err);
@@ -307,7 +305,6 @@ exports.optOutIfNotConverted = function (test) {
 		// opt out
 		function (callback) {
 			banana.optOut({
-				experiment: 'colors',
 				user: 'user2',
 			}, function (err) {
 				callback(err);
@@ -468,7 +465,6 @@ exports.manyParticipants = function (test) {
 			function (participants, callback) {
 				async.each(participants.slice(0, participants.length / 2), function (participant, callback) {
 					banana.optOut({
-						experiment: experimentSpec.name,
 						user: participant.user
 					}, function (err) {
 						callback(err);
