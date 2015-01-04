@@ -267,7 +267,7 @@ exports.optOutIfNotConverted = function (test) {
 		// opt out
 		function (callback) {
 			banana.optOut({
-				user: 'user1',
+				user: 'user1'
 			}, function (err) {
 				callback(err);
 			});
@@ -287,7 +287,7 @@ exports.optOutIfNotConverted = function (test) {
 		function (callback) {
 			banana.participate({
 				experiment: 'colors',
-				user: 'user2',
+				user: 'user2'
 			}, function (err, variationName) {
 				test.ok(_.contains(['red', 'blue', 'green'], variationName));
 				callback(err);
@@ -491,4 +491,6 @@ exports.manyParticipants = function (test) {
 	});
 
 	// TODO: test with client-specified variation
+	//
+	// TODO: test with ip address
 };
