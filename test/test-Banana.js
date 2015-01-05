@@ -67,7 +67,7 @@ exports.roughlyEqual = function (test) {
 	test.done();
 };
 
-exports.createExperiment = function (test) {
+exports.initExperiment = function (test) {
 	async.waterfall([
 		// check 0 experiements
 		function (callback) {
@@ -78,10 +78,11 @@ exports.createExperiment = function (test) {
 		},
 		// create experiment
 		function (callback) {
-			banana.createExperiment({
+			banana.initExperiment({
 				name: 'colors',
-				variations: ['red', 'blue', 'green']
+				variations: ['red', 'blue']
 			}, function (err) {
+				test.ok(!err);
 				callback();
 			});
 		},
@@ -93,13 +94,14 @@ exports.createExperiment = function (test) {
 				callback();
 			});
 		},
-		// add identical experiment
+		// add extra variation by re-initializing
+		// (this will update the existing 'colors' experiment)
 		function (callback) {
-			banana.createExperiment({
+			banana.initExperiment({
 				name: 'colors',
 				variations: ['red', 'blue', 'green']
 			}, function (err) {
-				test.ok(err);
+				test.ok(!err);
 				callback();
 			});
 		},
@@ -113,7 +115,7 @@ exports.createExperiment = function (test) {
 		},
 		// add new experiment
 		function (callback) {
-			banana.createExperiment({
+			banana.initExperiment({
 				name: 'sizes',
 				variations: ['small', 'large', 'control', 'massive']
 			}, function (err) {
@@ -141,7 +143,7 @@ exports.oneParticipant = function (test) {
 	async.waterfall([
 		// create experiment
 		function (callback) {
-			banana.createExperiment({
+			banana.initExperiment({
 				name: 'exp1',
 				variations: ['red', 'blue', 'green']
 			}, function (err) {
@@ -233,7 +235,7 @@ exports.optOutIfNotConverted = function (test) {
 	async.waterfall([
 		// create experiment
 		function (callback) {
-			banana.createExperiment({
+			banana.initExperiment({
 				name: 'colors',
 				variations: ['red', 'blue', 'green']
 			}, function (err) {
@@ -369,7 +371,7 @@ exports.manyParticipants = function (test) {
 		async.waterfall([
 			// create experiments
 			function (callback) {
-				banana.createExperiment({
+				banana.initExperiment({
 					name: experimentSpec.name,
 					variations: _.pluck(experimentSpec.variations, 'name')
 				}, function (err) {
