@@ -1,5 +1,5 @@
-Banana
-------
+Banana Split - early alpha version
+------------
 
 A small split testing library using MongoDB for storage.
 
