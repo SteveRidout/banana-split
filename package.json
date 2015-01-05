@@ -1,13 +1,13 @@
 {
-  "name": "banana",
+  "name": "banana-split",
   "version": "0.2.0",
   "description": "Split testing for Node.js and MongoDB",
   "main": "lib/Banana.js",
   "repository": {
     "type": "git",
-    "url": "https://github.com/SteveRidout/banana"
+    "url": "https://github.com/SteveRidout/banana-split"
   },
-  "homepage": "https://github.com/SteveRidout/banana",
+  "homepage": "https://github.com/SteveRidout/banana-split",
   "scripts": {
     "test": "jshint lib && jshint test && nodeunit test"
   },
