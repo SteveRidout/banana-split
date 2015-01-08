@@ -231,6 +231,77 @@ exports.oneParticipant = function (test) {
 	});
 };
 
+exports.excludeIPs = function (test) {
+	async.waterfall([
+		// create experiment
+		function (callback) {
+			banana.initExperiment({
+				name: 'exp1',
+				variations: ['red', 'blue', 'green']
+			}, function (err) {
+				callback(err);
+			});
+		},
+		// participate user1 from ip1
+		function (callback) {
+			banana.participate({
+				experiment: 'exp1',
+				user: 'user1',
+				ip: 'ip1'
+			}, function (err, variationName) {
+				test.ok(_.contains(['red', 'blue', 'green'], variationName));
+				callback(err);
+			});
+		},
+		// participate user2 from ip2
+		function (callback) {
+			banana.participate({
+				experiment: 'exp1',
+				user: 'user2',
+				ip: 'ip2'
+			}, function (err, variationName) {
+				test.ok(_.contains(['red', 'blue', 'green'], variationName));
+				callback(err);
+			});
+		},
+		function (callback) {
+			banana.getResult('exp1', 'event1', function (err, result) {
+				var totalParticipants = _.reduce(result.variations, function (memo, variation) {
+					return memo + variation.participants;
+				}, 0);
+
+				test.equal(totalParticipants, 2);
+				callback(null);
+			});
+		},
+		// exclude some ip addresses and try again
+		function (callback) {
+			banana.excludeIPs(['ip2']);
+			banana.getResult('exp1', 'event1', function (err, result) {
+				var totalParticipants = _.reduce(result.variations, function (memo, variation) {
+					return memo + variation.participants;
+				}, 0);
+
+				test.equal(totalParticipants, 1);
+				callback(null);
+			});
+		},
+		function (callback) {
+			banana.excludeIPs(['ip1', 'ip2']);
+			banana.getResult('exp1', 'event1', function (err, result) {
+				var totalParticipants = _.reduce(result.variations, function (memo, variation) {
+					return memo + variation.participants;
+				}, 0);
+
+				test.equal(totalParticipants, 0);
+				callback(null);
+			});
+		}
+	], function (err) {
+		test.equal(err, null, err);
+		test.done();
+	});
+};
 exports.optOutIfNotConverted = function (test) {
 	async.waterfall([
 		// create experiment
