@@ -611,6 +611,8 @@ exports.testResultCaching = function (test) {
 		// should still be only 1 participant in result due to caching
 		function (callback) {
 			banana.getResult('exp1', 'event1', {cacheExpiryTime: 3600 * 1000}, function (err, result) {
+				test.ok(!err, err);
+
 				var totalParticipants = _.reduce(result.variations, function (memo, variation) {
 					return memo + variation.participants;
 				}, 0);
@@ -622,6 +624,8 @@ exports.testResultCaching = function (test) {
 		// without caching - should be 2 participants...
 		function (callback) {
 			banana.getResult('exp1', 'event1', {cacheExpiryTime: 0}, function (err, result) {
+				test.ok(!err, err);
+
 				var totalParticipants = _.reduce(result.variations, function (memo, variation) {
 					return memo + variation.participants;
 				}, 0);
