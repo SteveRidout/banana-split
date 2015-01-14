@@ -48,6 +48,7 @@ exports.setUp = function (callback) {
 };
 
 exports.tearDown = function (callback) {
+	banana.excludeIPs([]);
 	mockgoose.reset();
 	callback();
 };
@@ -178,7 +179,7 @@ exports.oneParticipant = function (test) {
 			});
 		},
 		function (variationName, callback) {
-			banana.getResult('exp1', 'event1', function (err, result) {
+			banana.getResult('exp1', 'event1', {cacheExpiryTime: 0}, function (err, result) {
 				test.equal(result.experiment, 'exp1');
 				test.equal(result.variations.length, 3);
 
@@ -199,7 +200,7 @@ exports.oneParticipant = function (test) {
 			});
 		},
 		function (variationName, callback) {
-			banana.getResult('exp1', 'event1', function (err, result) {
+			banana.getResult('exp1', 'event1', {cacheExpiryTime: 0}, function (err, result) {
 				var variation = _.findWhere(result.variations, {name: variationName});
 				test.equal(variation.participants,       1);
 				test.equal(variation.conversions,        1);
@@ -216,7 +217,7 @@ exports.oneParticipant = function (test) {
 			});
 		},
 		function (callback) {
-			banana.getResult('exp1', 'event1', function (err, experiment) {
+			banana.getResult('exp1', 'event1', {cacheExpiryTime: 0}, function (err, experiment) {
 				_.each(experiment.variations, function (variation) {
 					test.equal(variation.participants,   0);
 					test.equal(variation.conversions,    0);
@@ -265,7 +266,7 @@ exports.excludeIPs = function (test) {
 			});
 		},
 		function (callback) {
-			banana.getResult('exp1', 'event1', function (err, result) {
+			banana.getResult('exp1', 'event1', {cacheExpiryTime: 0}, function (err, result) {
 				var totalParticipants = _.reduce(result.variations, function (memo, variation) {
 					return memo + variation.participants;
 				}, 0);
@@ -277,7 +278,7 @@ exports.excludeIPs = function (test) {
 		// exclude some ip addresses and try again
 		function (callback) {
 			banana.excludeIPs(['ip2']);
-			banana.getResult('exp1', 'event1', function (err, result) {
+			banana.getResult('exp1', 'event1', {cacheExpiryTime: 0}, function (err, result) {
 				var totalParticipants = _.reduce(result.variations, function (memo, variation) {
 					return memo + variation.participants;
 				}, 0);
@@ -288,7 +289,7 @@ exports.excludeIPs = function (test) {
 		},
 		function (callback) {
 			banana.excludeIPs(['ip1', 'ip2']);
-			banana.getResult('exp1', 'event1', function (err, result) {
+			banana.getResult('exp1', 'event1', {cacheExpiryTime: 0}, function (err, result) {
 				var totalParticipants = _.reduce(result.variations, function (memo, variation) {
 					return memo + variation.participants;
 				}, 0);
@@ -327,7 +328,7 @@ exports.optOutIfNotConverted = function (test) {
 		},
 		// check there's one participant
 		function (callback) {
-			banana.getResult('colors', 'event1', function (err, experiment) {
+			banana.getResult('colors', 'event1', {cacheExpiryTime: 0}, function (err, experiment) {
 				test.ok(!err, err);
 				var totalParticipants = 0;
 				_.each(experiment.variations, function (variation) {
@@ -347,7 +348,7 @@ exports.optOutIfNotConverted = function (test) {
 		},
 		// check there's no participants
 		function (callback) {
-			banana.getResult('colors', 'event1', function (err, result) {
+			banana.getResult('colors', 'event1', {cacheExpiryTime: 0}, function (err, result) {
 				var totalParticipants = 0;
 				_.each(result.variations, function (variation) {
 					totalParticipants += variation.participants;
@@ -385,7 +386,7 @@ exports.optOutIfNotConverted = function (test) {
 		},
 		// should be 0 participants
 		function (callback) {
-			banana.getResult('colors', 'event1', function (err, experiment) {
+			banana.getResult('colors', 'event1', {cacheExpiryTime: 0}, function (err, experiment) {
 				var totalParticipants = 0;
 				_.each(experiment.variations, function (variation) {
 					totalParticipants += variation.participants;
@@ -478,7 +479,7 @@ exports.manyParticipants = function (test) {
 			},
 			// check the variation counts, which should be a roughly equal split
 			function (participants, variationCounts, callback) {
-				banana.getResult(experimentSpec.name, 'event-' + experimentSpec.name, function (err, result) {
+				banana.getResult(experimentSpec.name, 'event-' + experimentSpec.name, {cacheExpiryTime: 0}, function (err, result) {
 					_.each(result.variations, function (variation) {
 						test.ok(roughlyEqual(variation.participants, TOTAL_PARTICIPANTS / result.variations.length, 0.4, 0.1),
 							"roughly equal split: " + variation.name + ", " + variation.participants);
@@ -514,7 +515,7 @@ exports.manyParticipants = function (test) {
 			},
 			// check the conversion rates are correct (allowing for rounding error)
 			function (participants, callback) {
-				banana.getResult(experimentSpec.name, 'event-' + experimentSpec.name, function (err, result) {
+				banana.getResult(experimentSpec.name, 'event-' + experimentSpec.name, {cacheExpiryTime: 0}, function (err, result) {
 					// check total participants number
 					var totalParticipants = _.reduce(_.pluck(result.variations, 'participants'), function (a, m) {return a + m;}, 0);
 					test.equal(totalParticipants, TOTAL_PARTICIPANTS);
@@ -548,7 +549,7 @@ exports.manyParticipants = function (test) {
 			},
 			// check total has decreased to 50%
 			function (callback) {
-				banana.getResult(experimentSpec.name, 'event-' + experimentSpec.name, function (err, experiment) {
+				banana.getResult(experimentSpec.name, 'event-' + experimentSpec.name, {cacheExpiryTime: 0}, function (err, experiment) {
 					test.equal(
 						_.reduce(_.pluck(experiment.variations, 'participants'), function (a, m) {return a + m;}, 0),
 						TOTAL_PARTICIPANTS / 2);
@@ -562,8 +563,76 @@ exports.manyParticipants = function (test) {
 		test.ok(!err, err);
 		test.done();
 	});
-
-	// TODO: test with client-specified variation
-	//
-	// TODO: test with ip address
 };
+
+exports.testResultCaching = function (test) {
+	async.waterfall([
+		// create experiment
+		function (callback) {
+			banana.initExperiment({
+				name: 'exp1',
+				variations: ['red', 'blue', 'green']
+			}, function (err) {
+				callback(err);
+			});
+		},
+		// participate user1 from ip1
+		function (callback) {
+			banana.participate({
+				experiment: 'exp1',
+				user: 'user1',
+				ip: 'ip1'
+			}, function (err, variationName) {
+				test.ok(_.contains(['red', 'blue', 'green'], variationName));
+				callback(err);
+			});
+		},
+		function (callback) {
+			banana.getResult('exp1', 'event1', {cacheExpiryTime: 0}, function (err, result) {
+				var totalParticipants = _.reduce(result.variations, function (memo, variation) {
+					return memo + variation.participants;
+				}, 0);
+
+				test.equal(totalParticipants, 1);
+				callback(null);
+			});
+		},
+		// participate user2 from ip2
+		function (callback) {
+			banana.participate({
+				experiment: 'exp1',
+				user: 'user2',
+				ip: 'ip2'
+			}, function (err, variationName) {
+				test.ok(_.contains(['red', 'blue', 'green'], variationName));
+				callback(err);
+			});
+		},
+		// should still be only 1 participant in result due to caching
+		function (callback) {
+			banana.getResult('exp1', 'event1', {cacheExpiryTime: 3600 * 1000}, function (err, result) {
+				var totalParticipants = _.reduce(result.variations, function (memo, variation) {
+					return memo + variation.participants;
+				}, 0);
+
+				test.equal(totalParticipants, 1);
+				callback(null);
+			});
+		},
+		// without caching - should be 2 participants...
+		function (callback) {
+			banana.getResult('exp1', 'event1', {cacheExpiryTime: 0}, function (err, result) {
+				var totalParticipants = _.reduce(result.variations, function (memo, variation) {
+					return memo + variation.participants;
+				}, 0);
+
+				test.equal(totalParticipants, 2);
+				callback(null);
+			});
+		}
+	], function (err) {
+		test.ok(!err, err);
+		test.done();
+	});
+};
+
