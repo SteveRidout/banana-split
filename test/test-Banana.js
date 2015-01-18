@@ -640,3 +640,51 @@ exports.testResultCaching = function (test) {
 	});
 };
 
+exports.testGetVariation = function (test) {
+	async.waterfall([
+		// create experiment
+		function (callback) {
+			banana.initExperiment({
+				name: 'exp1',
+				variations: ['red', 'blue', 'green']
+			}, function (err) {
+				callback(err);
+			});
+		},
+		// participate user1 from ip1
+		function (callback) {
+			banana.participate({
+				experiment: 'exp1',
+				user: 'user1',
+				ip: 'ip1'
+			}, function (err, variationName) {
+				test.ok(_.contains(['red', 'blue', 'green'], variationName));
+				callback(err, variationName);
+			});
+		},
+		// get variation for ip1
+		function (variationName, callback) {
+			banana.getVariation({
+				experiment: 'exp1',
+				user: 'user1'
+			}, function (err, fetchedVariationName) {
+				test.equal(fetchedVariationName, variationName);
+				callback();
+			});
+		},
+		// get variation for unknown user
+		function (callback) {
+			banana.getVariation({
+				experiment: 'exp1',
+				user: 'user2'
+			}, function (err, fetchedVariationName) {
+				test.equal(fetchedVariationName, null);
+				callback();
+			});
+		}
+	], function (err) {
+		test.ok(!err, err);
+		test.done();
+	});
+};
+
