@@ -19,9 +19,10 @@
   ],
   "devDependencies": {
     "jshint": "*",
-    "mongoose": "^3.8.20",
     "mockgoose": "^1.10.7",
-    "nodeunit": "*"
+    "mongoose": "^3.8.20",
+    "nodeunit": "*",
+    "random-js": "^1.0.4"
   },
   "author": {
     "name": "Steve Ridout"
@@ -30,6 +31,7 @@
   "dependencies": {
     "MD5": "^1.2.1",
     "async": "^0.9.0",
+    "random-weighted-choice": "^0.1.1",
     "underscore": "^1.7.0"
   },
   "bugs": {

@@ -1,7 +1,14 @@
 "use strict";
 
 var async = require('async'),
-	_ = require('underscore');
+	_ = require('underscore'),
+	Random = require('random-js');
+
+// use deterministic random number generator to avoid sporadic test failures
+var random = new Random(Random.engines.mt19937().seed(1234));
+var deterministicRandom = function () {
+	return random.real(0, 1);
+};
 
 var mongoose = require('mongoose'),
 	mockgoose = require('mockgoose');
@@ -42,6 +49,7 @@ exports.setUp = function (callback) {
 		db.on('error', console.error.bind(console, 'connection error:'));
 		db.once('open', function () {
 			banana = Banana({db: db, mongoose: mongoose, unitTest: true});
+			banana.setRandomFunction(deterministicRandom);
 			callback();
 		});
 	}
@@ -155,7 +163,7 @@ exports.oneParticipant = function (test) {
 		function (callback) {
 			banana.participate({
 				experiment: 'exp1',
-				user: 'user1',
+				user: 'user1'
 			}, function (err, variationName) {
 				test.ok(_.contains(['red', 'blue', 'green'], variationName));
 				callback(err, variationName);
@@ -679,6 +687,65 @@ exports.testGetVariation = function (test) {
 				user: 'user2'
 			}, function (err, fetchedVariationName) {
 				test.equal(fetchedVariationName, null);
+				callback();
+			});
+		}
+	], function (err) {
+		test.ok(!err, err);
+		test.done();
+	});
+};
+
+exports.testWeightedVariations = function (test) {
+	async.series([
+		// create experiment
+		function (callback) {
+			banana.initExperiment({
+				name: 'exp1',
+				variations: [
+					{
+						name: 'red',
+			   			weight: 5
+					},
+					{
+						name: 'green',
+						weight: 4
+					},
+					{
+						name: 'blue',
+						weight: 1
+					}
+				]
+			}, function (err) {
+				callback(err);
+			});
+		},
+		// add lots of participants
+		function (callback) {
+			var variationCounts = {
+				red: 0,
+				green: 0,
+				blue: 0
+			};
+			
+			async.each(_.range(1000), function (index, callback) {
+				banana.participate({
+					experiment: 'exp1',
+					user: 'user-' + index,
+				}, function (err, variationName) {
+					variationCounts[variationName]++;
+					callback(err, variationName);
+				});
+			}, function (err) {
+				callback(err);
+			});
+		},
+		// check the variation counts, which should be roughly proportional to the weights
+		function (callback) {
+			banana.getResult('exp1', 'no-event', {cacheExpiryTime: 0}, function (err, result) {
+				test.ok(roughlyEqual(_.findWhere(result.variations, {name: 'red'}).participants, 500));
+				test.ok(roughlyEqual(_.findWhere(result.variations, {name: 'green'}).participants, 400));
+				test.ok(roughlyEqual(_.findWhere(result.variations, {name: 'blue'}).participants, 100));
 				callback();
 			});
 		}
