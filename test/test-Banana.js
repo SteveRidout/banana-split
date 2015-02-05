@@ -100,6 +100,8 @@ exports.initExperiment = function (test) {
 			banana.listExperiments(function (err, experiments) {
 				test.equal(experiments.length, 1);
 				test.equal(experiments[0].name, 'colors');
+
+				test.ok(!experiments[0].events);
 				callback();
 			});
 		},
@@ -108,7 +110,8 @@ exports.initExperiment = function (test) {
 		function (callback) {
 			banana.initExperiment({
 				name: 'colors',
-				variations: ['red', 'blue', 'green']
+				variations: ['red', 'blue', 'green'],
+				events: ['signup', 'upgrade']
 			}, function (err) {
 				test.ok(!err);
 				callback();
@@ -119,6 +122,14 @@ exports.initExperiment = function (test) {
 			banana.listExperiments(function (err, experiments) {
 				test.equal(experiments.length, 1);
 				test.equal(experiments[0].name, 'colors');
+
+				callback();
+			});
+		},
+		// check events
+		function (callback) {
+			banana.getExperiment('colors', function (err, experiment) {
+				test.equal(experiment.events.length, 2);
 				callback();
 			});
 		},
