@@ -252,7 +252,7 @@ exports.oneParticipant = function (test) {
 		},
 		// multiple event count condition
 		function (variationName, callback) {
-			banana.getResult('exp1', 'event1', {cacheExpiryTime: 0, count: 5}, function (err, result) {
+			banana.getResult('exp1', 'event1:5', {cacheExpiryTime: 0}, function (err, result) {
 				var variation = _.findWhere(result.variations, {name: variationName});
 				test.equal(variation.participants,       1);
 				test.equal(variation.conversions,        1);
