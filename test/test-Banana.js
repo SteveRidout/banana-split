@@ -291,6 +291,7 @@ exports.excludeIPs = function (test) {
 				}, 0);
 
 				test.equal(totalParticipants, 2);
+				test.equal(totalParticipants, result.totalParticipants);
 				callback(null);
 			});
 		},
@@ -681,7 +682,7 @@ exports.testGetVariation = function (test) {
 				callback(err, variationName);
 			});
 		},
-		// get variation for ip1
+		// get variation for user 1
 		function (variationName, callback) {
 			banana.getVariation({
 				experiment: 'exp1',
@@ -699,6 +700,70 @@ exports.testGetVariation = function (test) {
 			}, function (err, fetchedVariationName) {
 				test.equal(fetchedVariationName, null);
 				callback();
+			});
+		}
+	], function (err) {
+		test.ok(!err, err);
+		test.done();
+	});
+};
+
+exports.testMultipleIPUsers = function (test) {
+	async.series([
+		// create experiment
+		function (callback) {
+			banana.initExperiment({
+				name: 'exp1',
+				variations: ['red', 'blue', 'green']
+			}, function (err) {
+				callback(err);
+			});
+		},
+		// participate user1 from ip1
+		function (callback) {
+			banana.participate({
+				experiment: 'exp1',
+				user: 'user1',
+				ip: 'ip1'
+			}, function (err, variationName) {
+				test.ok(_.contains(['red', 'blue', 'green'], variationName));
+				callback(err);
+			});
+		},
+		// participate user2, also from ip1
+		function (callback) {
+			banana.participate({
+				experiment: 'exp1',
+				user: 'user2',
+				ip: 'ip1'
+			}, function (err, variationName) {
+				test.ok(_.contains(['red', 'blue', 'green'], variationName));
+				callback(err);
+			});
+		},
+		// get result
+		function (callback) {
+			banana.getResult('exp1', 'no-event', {cacheExpiryTime: 0}, function (err, result) {
+				test.equal(result.totalParticipants, 1);
+				callback(err);
+			});
+		},
+		// participate user3, from different ip: ip2
+		function (callback) {
+			banana.participate({
+				experiment: 'exp1',
+				user: 'user3',
+				ip: 'ip2'
+			}, function (err, variationName) {
+				test.ok(_.contains(['red', 'blue', 'green'], variationName));
+				callback(err);
+			});
+		},
+		// get result
+		function (callback) {
+			banana.getResult('exp1', 'no-event', {cacheExpiryTime: 0}, function (err, result) {
+				test.equal(result.totalParticipants, 2);
+				callback(err);
 			});
 		}
 	], function (err) {
@@ -742,7 +807,7 @@ exports.testWeightedVariations = function (test) {
 			async.each(_.range(1000), function (index, callback) {
 				banana.participate({
 					experiment: 'exp1',
-					user: 'user-' + index,
+					user: 'user-' + index
 				}, function (err, variationName) {
 					variationCounts[variationName]++;
 					callback(err, variationName);
