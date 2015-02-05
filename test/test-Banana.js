@@ -224,6 +224,39 @@ exports.oneParticipant = function (test) {
 				test.equal(variation.participants,       1);
 				test.equal(variation.conversions,        1);
 				test.equal(variation.conversionRate,     1);
+				callback(err, variationName);
+			});
+		},
+		// multiple event count condition
+		function (variationName, callback) {
+			banana.getResult('exp1', 'event1', {cacheExpiryTime: 0, count: 5}, function (err, result) {
+				var variation = _.findWhere(result.variations, {name: variationName});
+				test.equal(variation.participants,       1);
+				test.equal(variation.conversions,        0);
+				test.equal(variation.conversionRate,     0);
+				callback(err, variationName);
+			});
+		},
+		// add 4 more events...
+		function (variationName, callback) {
+			async.each(_.range(4), function (number, callback) {
+				banana.trackEvent({
+					event: 'event1',
+					user: 'user1'
+				}, function (err) {
+					callback(err);
+				});
+			}, function (err) {
+				callback(err, variationName);
+			});
+		},
+		// multiple event count condition
+		function (variationName, callback) {
+			banana.getResult('exp1', 'event1', {cacheExpiryTime: 0, count: 5}, function (err, result) {
+				var variation = _.findWhere(result.variations, {name: variationName});
+				test.equal(variation.participants,       1);
+				test.equal(variation.conversions,        1);
+				test.equal(variation.conversionRate,     1);
 				callback();
 			});
 		},
