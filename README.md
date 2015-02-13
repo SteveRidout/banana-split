@@ -1,6 +1,8 @@
 Banana Split - early alpha version
 ------------
 
+[![Build Status](https://travis-ci.org/SteveRidout/banana-split.svg?branch=master)](https://travis-ci.org/SteveRidout/banana-split)
+
 A small split testing module using MongoDB for storage. This is a back-end library, not a standalone app.
 
 Use it on your Node.js web server to:
