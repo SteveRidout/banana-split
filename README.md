@@ -28,75 +28,87 @@ Add banana-split to your node.js project:
 
 In your node.js code, initialize the module as follows:
 
-    // set up a mongodb connection with mongoose
-    var mongoose = require('mongoose');
-    var db = mongoose.createConnection("mongodb://localhost:27017/myappdata");
+```javascript
+// set up a mongodb connection with mongoose
+var mongoose = require('mongoose');
+var db = mongoose.createConnection("mongodb://localhost:27017/myappdata");
 
-    var bananaSplit = require('banana-split')({
-      db: db, 
-      mongoose: mongoose
-    });
+var bananaSplit = require('banana-split')({
+  db: db, 
+  mongoose: mongoose
+});
+```
 
 Add an experiment...
 
-    bananaSplit.initExperiment({
-      name: 'buttonColor',
-      variations: ['red', 'green']
-    });
+```javascript
+bananaSplit.initExperiment({
+  name: 'buttonColor',
+  variations: ['red', 'green']
+});
+```
 
 Let's participate a user with ID 'user-1' and IP address '127.0.0.1'...
 
-    bananaSplit.participate({
-      experiment: 'button-color',
-      user: 'user-1',
-      ip: '127.0.0.1'
-    }, function (err, variation) {
-      // variation will now be either 'red' or 'green'
-    })
+```javascript
+bananaSplit.participate({
+  experiment: 'button-color',
+  user: 'user-1',
+  ip: '127.0.0.1'
+}, function (err, variation) {
+  // variation will now be either 'red' or 'green'
+})
+```
 
 Track a couple of events by this user... 
 
-    bananaSplit.trackEvent({
-      user: 'user-1',
-      ip: '127.0.0.1',
-      name: 'signup'
-    })
-    bananaSplit.trackEvent({
-      user: 'user-1',
-      ip: '127.0.0.1',
-      name: 'click-button'
-    })
+```javascript
+bananaSplit.trackEvent({
+  user: 'user-1',
+  ip: '127.0.0.1',
+  name: 'signup'
+})
+bananaSplit.trackEvent({
+  user: 'user-1',
+  ip: '127.0.0.1',
+  name: 'click-button'
+})
+```
 
 Later, after many users have participated and generated events, calculate the results with...
 
-    bananaSplit.getResult('buttonColor', 'name', function (err, result) {
-      // put code to deal with result here
-    });
+```javascript
+bananaSplit.getResult('buttonColor', 'name', function (err, result) {
+  // put code to deal with result here
+});
+```
 
 Here's an example of the kind of the result from getResult():
 
+```javascript
+{
+  "lastCalculated": "2015-02-13T11:21:12.255Z",
+  "startDate": "2014-01-05T15:31:05.000Z",
+  "experiment": "button-color",
+  "event": "click-button",
+  "variations": [
     {
-      "lastCalculated": "2015-02-13T11:21:12.255Z",
-      "startDate": "2014-01-05T15:31:05.000Z",
-      "experiment": "button-color",
-      "event": "click-button",
-      "variations": [
-        {
-          "confidenceInterval": 0.02961635085131982,
-          "conversionRate": 0.5146252285191956,
-          "conversions": 563,
-          "participants": 1094,
-          "name": "red"
-        },
-        {
-          "confidenceInterval": 0.029085324570063693,
-          "conversionRate": 0.3782771535580524,
-          "conversions": 404,
-          "participants": 1068,
-          "name": "green"
-        }
-      ]
+      "confidenceInterval": 0.02961635085131982,
+      "conversionRate": 0.5146252285191956,
+      "conversions": 563,
+      "participants": 1094,
+      "name": "red"
+    },
+    {
+      "confidenceInterval": 0.029085324570063693,
+      "conversionRate": 0.3782771535580524,
+      "conversions": 404,
+      "participants": 1068,
+      "name": "green"
     }
+  ]
+}
+```
 
 To interpret these confidence intervals, there's a 95% chance that the true conversionRate lies within the range:
 
@@ -124,9 +136,11 @@ Banana-split doesn't distinguish between anonynous and signed in users. In case 
 
 - The temporary user ID is no longer interesting, and to avoid adding noise to the data, I opt-out this temporary user using the following function:
 
-    bananaSplit.optOut({
-      user: '54dded1e5287fcd4a5717c04'
-    })
+```javascript
+bananaSplit.optOut({
+  user: '54dded1e5287fcd4a5717c04'
+})
+```
 
 ## More about getResult()
 
