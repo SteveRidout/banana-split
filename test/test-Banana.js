@@ -2,22 +2,20 @@
 
 var async = require('async'),
   _ = require('underscore'),
-  Random = require('random-js');
+  Random = require('random-js'),
+  mongoose = require('mongoose'),
+  mockgoose = require('mockgoose');
+
+var Banana = require('../lib/Banana');
+
+var db,     // fake mockgoose database
+  banana;   // banana instance
 
 // use deterministic random number generator to avoid sporadic test failures
 var random = new Random(Random.engines.mt19937().seed(1234));
 var deterministicRandom = function() {
   return random.real(0, 1);
 };
-
-var mongoose = require('mongoose'),
-  mockgoose = require('mockgoose');
-mockgoose(mongoose);
-
-var Banana = require('../lib/Banana');
-
-var db,       // fake mockgoose database
-  banana;   // banana instance
 
 var roughlyEqual = function(a, b, relativeTolerance, absoluteTolerance) {
   relativeTolerance = relativeTolerance || 0.1;    // 10% default
@@ -33,6 +31,8 @@ var roughlyEqual = function(a, b, relativeTolerance, absoluteTolerance) {
     return false;
   }
 };
+
+mockgoose(mongoose);
 
 // to catch errors that happen in an async function called from a test
 // see https://github.com/caolan/nodeunit/pull/245
