@@ -149,7 +149,7 @@ The data for all these users is stored in MongoDB so changing this behavior is p
 
 ### WARNING: Scaling for large websites
 
-As the number of participants and events increases, calls to getResult() will become slower and use more memory. It would make sense to calculate this incrementally instead of re-calculating it from scratch each time.
+As the number of participants and events increases, calls to getResult() will become more expensive. It would make sense to calculate this incrementally instead of re-calculating it from scratch each time.
 
 ## State of development
 
