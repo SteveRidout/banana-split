@@ -57,6 +57,8 @@ Let's participate a user with ID 'user-1' and IP address '127.0.0.1'...
       experiment: 'button-color',
       user: 'user-1',
       ip: '127.0.0.1'
+    }, function (err, variation) {
+      // variation will now be either 'red' or 'green'
     })
 
 Track a couple of events by this user... 
@@ -74,13 +76,11 @@ Track a couple of events by this user...
 
 Later, after many users have participated and generated events, calculate the results with...
 
-    var buttonColorClickRates = bananaSplit.getResult({
-      experiment: 'buttonColor',
-      event: 'name'
+    bananaSplit.getResult('buttonColor', 'name', function (err, result) {
+      // put code to deal with result here
     });
 
-
-**buttonColorClickRates** will now look something similar to this imaginary result:
+Here's an example of the kind of the result from getResult():
 
     {
       "lastCalculated": "2015-02-13T11:21:12.255Z",
@@ -129,17 +129,17 @@ Banana-split doesn't distinguish between anonynous and signed in users. In case 
 
 ### 3. Anonymous visitor signs in to an existing account
 
-- The temporary user ID is no longer interesting, and to avoid adding noise to the data, I opt-out this temporary user as follows
+- The temporary user ID is no longer interesting, and to avoid adding noise to the data, I opt-out this temporary user using the following function:
 
     bananaSplit.optOut({
       user: '54dded1e5287fcd4a5717c04'
     })
 
-## More getResult()
+## More about getResult()
 
 ### Filtering: only one participant from each IP address
 
-The getResult() function filters out all but the first user from each unique IP address. This is to:
+The getResult() function filters out all but the first user from a given IP address. This is to:
 
 1. Eliminate a lot of new 'users' who were generated when an existing user signs out.
 2. Prevent many requests from one IP address from adding noise. e.g. search engine bots or other web-scrapers will only be counted once each
@@ -147,18 +147,9 @@ The getResult() function filters out all but the first user from each unique IP 
 
 The data for all these users is stored in MongoDB so changing this behavior is possible after gathering the data. The behavior above is based on my intuition and needs and if you'd like it to be different please let me know and I can add an option.
 
-## Filtering users based on IP address
+### WARNING: Scaling for large websites
 
-You can exclude certain events and participants based on their IP address - e.g. 
-
-## WARNING: Scaling for large websites
-
-WARNING: As the number of participants and events increases, calls to getResult() will become slower and use more memory.
-
-
-## Further documentation
-
-There's no detailed documentation yet. Please refer to the [unit tests](https://github.com/SteveRidout/banana-split/tree/master/test) and the [rest of the source code](https://github.com/SteveRidout/banana-split/tree/master/lib) for more details.
+As the number of participants and events increases, calls to getResult() will become slower and use more memory. It would make sense to calculate this incrementally instead of re-calculating it from scratch each time.
 
 ## State of development
 
