@@ -1,6 +1,6 @@
 {
   "name": "banana-split",
-  "version": "0.6.2",
+  "version": "0.7.0",
   "description": "Split testing for Node.js and MongoDB",
   "main": "lib/Banana.js",
   "repository": {
