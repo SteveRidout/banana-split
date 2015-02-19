@@ -116,7 +116,7 @@ To interpret these confidence intervals, there's a 95% chance that the true conv
 
 i.e. we have a 95% confidence that conversion rate for the "red" variation is:
 
-  51.5% ± 3.0% or 48.5% - 54.5%
+  51.5% ± 3.0%
 
 ## Anonymous and signed in users
  
