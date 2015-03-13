@@ -78,7 +78,10 @@ bananaSplit.trackEvent({
 Later, after many users have participated and generated events, calculate the results with...
 
 ```javascript
-bananaSplit.getResult('buttonColor', 'name', function (err, result) {
+bananaSplit.getResults({
+  experiment: 'buttonColor',
+  event: 'name'
+}, function (err, result) {
   // put code to deal with result here
 });
 ```
@@ -86,28 +89,7 @@ bananaSplit.getResult('buttonColor', 'name', function (err, result) {
 Here's an example of the kind of the result from getResult():
 
 ```javascript
-{
-  "lastCalculated": "2015-02-13T11:21:12.255Z",
-  "startDate": "2014-01-05T15:31:05.000Z",
-  "experiment": "button-color",
-  "event": "click-button",
-  "variations": [
-    {
-      "confidenceInterval": 0.02961635085131982,
-      "conversionRate": 0.5146252285191956,
-      "conversions": 563,
-      "participants": 1094,
-      "name": "red"
-    },
-    {
-      "confidenceInterval": 0.029085324570063693,
-      "conversionRate": 0.3782771535580524,
-      "conversions": 404,
-      "participants": 1068,
-      "name": "green"
-    }
-  ]
-}
+TODO: example
 ```
 
 To interpret these confidence intervals, there's a 95% chance that the true conversionRate lies within the range:
